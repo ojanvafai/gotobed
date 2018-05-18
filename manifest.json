@@ -1,0 +1,21 @@
+{
+  "name": "Go to bed!",
+  "manifest_version": 2,
+  "version": "0.1",
+  "options_page": "options.html",
+  "background": {
+    "scripts": ["pauser.js", "eventPage.js"],
+    "persistent": false
+  },
+  "browser_action": {
+
+  },
+  "permissions": [
+    "alarms",
+    "tabs",
+    "http://*/*",
+    "https://*/*",
+    "storage",
+    "<all_urls>"
+  ]
+}
