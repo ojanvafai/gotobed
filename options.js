@@ -43,12 +43,12 @@ function appendButton(container, value, onClick) {
 }
 
 chrome.storage.sync.get({
-  start: null,
-  end: null,
+  pause: null,
+  unpause: null,
 }, function(items) {
   var toolbar = document.getElementById('toolbar');
-  appendButton(toolbar, "Pause", pause);
-  appendButton(toolbar, "Unpause",unpause);
+  appendButton(toolbar, "Pause", pauseAll);
+  appendButton(toolbar, "Unpause",unpauseAll);
 
   document.body.append("Pause time: ");
   appendTimeInput('pause', items);

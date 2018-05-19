@@ -1,39 +1,58 @@
-function forEachTab(callback) {
-  chrome.tabs.query({
-    url: ["http://*/*", "https://*/*",],
-  }, (tabs) => {
+function forEachTab(callback, opt_extraQueryInfo) {
+  var queryInfo = opt_extraQueryInfo || {};
+  queryInfo.url = ["http://*/*", "https://*/*"];
+  chrome.tabs.query(queryInfo, (tabs) => {
     for (tab of tabs) {
       callback(tab);
     }
   });
 }
 
-function pause() {
-  forEachTab((tab) => {
-    // Can't inject script here due to corp policy, so just discard.
-    if (tab.url.indexOf(".google.") != -1) {
-      if (!tab.discarded)
-        chrome.tabs.discard(tab.id);
-      return;
-    }
+function corpPolicyDisallowsScripting(url) {
+  var disallowed = [".google.", ".asana."];
+  for (var item of disallowed) {
+    if (url.indexOf(item) != -1)
+      return true;
+  }
+  return false;
+}
 
-    chrome.tabs.executeScript(tab.id, {
-      code: 'document.documentElement.style.opacity=0.1',
-    });
+function pause(tab) {
+  if (corpPolicyDisallowsScripting(tab.url)) {
+    if (!tab.discarded)
+      chrome.tabs.discard(tab.id);
+    return;
+  }
+
+  chrome.tabs.executeScript(tab.id, {
+    code: 'document.documentElement.style.opacity=0.1',
   });
 }
 
-function unpause() {
-  forEachTab((tab) => {
-    // Can't inject script here due to corp policy, so just discard.
-    if (tab.url.indexOf(".google.") != -1) {
-      if (!tab.discarded)
-        chrome.tabs.reload(tab.id);
-      return;
-    }
+function unpause(tab) {
+  if (corpPolicyDisallowsScripting(tab.url)) {
+    if (tab.discarded)
+      chrome.tabs.reload(tab.id);
+    return;
+  }
 
-    chrome.tabs.executeScript(tab.id, {
-      code: 'document.documentElement.style.opacity=1',
-    });
+  chrome.tabs.executeScript(tab.id, {
+    code: 'document.documentElement.style.opacity=1',
   });
+}
+
+function pauseAll() {
+  forEachTab(pause);
+}
+
+function unpauseAll() {
+  forEachTab(unpause);
+}
+
+function shouldBePaused(currentTime, pauseTime, unpauseTime) {
+  if (pauseTime < unpauseTime) {
+    return currentTime >= pauseTime && currentTime <= unpauseTime;
+  } else {
+    return currentTime >= pauseTime || currentTime <= unpauseTime;
+  }
 }
