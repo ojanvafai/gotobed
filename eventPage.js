@@ -1,14 +1,4 @@
-chrome.alarms.onAlarm.addListener((alarm) => {
-  var name = alarm.name;
-  if (name == 'pause')
-    pauseAll();
-  else if (name == 'unpause')
-    unpauseAll();
-  else
-    throw "Alarm fired with invalid name: " + name;
-});
-
-chrome.windows.onFocusChanged.addListener((windowId) => {
+function updatePauseState(windowId) {
   chrome.storage.sync.get({
     pause: null,
     unpause: null,
@@ -21,4 +11,12 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
       windowId: windowId,
     });
   });
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  updatePauseState(null);
+});
+
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  updatePauseState(windowId);
 });

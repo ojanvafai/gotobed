@@ -1,3 +1,9 @@
+var alarmKey = "PeriodicAlarm";
+chrome.alarms.clear(alarmKey);
+chrome.alarms.create(alarmKey, {
+  periodInMinutes: 5,
+});
+
 var timer;
 function save(key) {
   if (timer)
@@ -5,20 +11,8 @@ function save(key) {
 
   timer = setTimeout(function() {
     timer = null;
-
-    var value = document.getElementById(key).value;
-
-    var date = new Date();
-    date.setHours(...value.split(':'));
-
-    chrome.alarms.clear(key);
-    chrome.alarms.create(key, {
-      when: date.getTime(),
-      periodInMinutes: 24 * 60, // 24 hours
-    });
-
     var data = {};
-    data[key] = value;
+    data[key] = document.getElementById(key).value;
     chrome.storage.sync.set(data, function() {});
   }, 100);
 };

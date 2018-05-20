@@ -42,11 +42,17 @@ function unpause(tab) {
 }
 
 function pauseAll() {
+  if (localStorage.paused)
+    return;
   forEachTab(pause);
+  localStorage.paused = true;
 }
 
 function unpauseAll() {
+  if (!localStorage.paused)
+    return;
   forEachTab(unpause);
+  localStorage.paused = false;
 }
 
 function shouldBePaused(currentTime, pauseTime, unpauseTime) {
