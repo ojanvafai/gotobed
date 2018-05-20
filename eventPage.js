@@ -1,22 +1,25 @@
-function updatePauseState(windowId) {
+function padTime(number) {
+  if (number < 10)
+    return "0" + number;
+  return number;
+}
+
+function getCurrentTime() {
+  var now = new Date();
+  return now.getHours() + ":" + padTime(now.getMinutes());
+}
+
+function updatePauseState() {
   chrome.storage.sync.get({
     pause: null,
     unpause: null,
   }, function(items) {
-    var now = new Date();
-    var current = now.getHours() + ":" + now.getMinutes();
-    var callback = shouldBePaused(current, items.pause, items.unpause) ?
-      pause : unpause;
-    forEachTab(callback, {
-      windowId: windowId,
-    });
+    if (shouldBePaused(getCurrentTime(), items.pause, items.unpause))
+      pauseAll();
+    else
+      unpauseAll();
   });
 }
 
-chrome.alarms.onAlarm.addListener((alarm) => {
-  updatePauseState(null);
-});
-
-chrome.windows.onFocusChanged.addListener((windowId) => {
-  updatePauseState(windowId);
-});
+chrome.alarms.onAlarm.addListener(updatePauseState);
+chrome.windows.onFocusChanged.addListener(updatePauseState);

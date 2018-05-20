@@ -17,48 +17,64 @@ function corpPolicyDisallowsScripting(url) {
   return false;
 }
 
-function pause(tab) {
+function setTabPaused(tab, shouldPause) {
   if (corpPolicyDisallowsScripting(tab.url)) {
-    if (!tab.discarded)
+    if (shouldPause && !tab.discarded)
       chrome.tabs.discard(tab.id);
-    return;
-  }
-
-  chrome.tabs.executeScript(tab.id, {
-    code: 'document.documentElement.style.opacity=0.1',
-  });
-}
-
-function unpause(tab) {
-  if (corpPolicyDisallowsScripting(tab.url)) {
-    if (tab.discarded)
+    else if (!shouldPause && tab.discarded)
       chrome.tabs.reload(tab.id);
     return;
   }
 
+  var opacity = shouldPause ? "0.1" : "1";
   chrome.tabs.executeScript(tab.id, {
-    code: 'document.documentElement.style.opacity=1',
+    code: `document.documentElement.style.opacity=${opacity}`,
+  });
+}
+
+var pauseStateKey = "pauseState";
+
+function pauseStateInfo(state) {
+  var data = {};
+  data[pauseStateKey] = state;
+  return data;
+}
+
+function setPauseState(state) {
+  chrome.storage.sync.set(pauseStateInfo(state), () => {});
+}
+
+function setAllPaused(shouldPause) {
+  chrome.storage.sync.get(pauseStateInfo(null), (items) => {
+    if (!(shouldPause ^ items[pauseStateKey]))
+      return;
+    forEachTab((tab) => {
+      setTabPaused(tab, shouldPause);
+    });
+    setPauseState(shouldPause);
   });
 }
 
 function pauseAll() {
-  if (localStorage.paused)
-    return;
-  forEachTab(pause);
-  localStorage.paused = true;
+  setAllPaused(true);
 }
 
 function unpauseAll() {
-  if (!localStorage.paused)
-    return;
-  forEachTab(unpause);
-  localStorage.paused = false;
+  setAllPaused(false);
+}
+
+function converTimeToNumber(time) {
+  return parseInt(time.replace(':', ''), 10);
 }
 
 function shouldBePaused(currentTime, pauseTime, unpauseTime) {
-  if (pauseTime < unpauseTime) {
-    return currentTime >= pauseTime && currentTime <= unpauseTime;
+  var current = converTimeToNumber(currentTime);
+  var pause = converTimeToNumber(pauseTime);
+  var unpause = converTimeToNumber(unpauseTime);
+
+  if (pause < unpause) {
+    return current >= pause && current <= unpause;
   } else {
-    return currentTime >= pauseTime || currentTime <= unpauseTime;
+    return current >= pause || current <= unpause;
   }
 }
